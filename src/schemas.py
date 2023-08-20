@@ -4,9 +4,9 @@ from datetime  import date,datetime
 
 
 class UserSchema(BaseModel):
-    username: str = Field(min_length=5, max_length=16)
+    username: str = Field(min_length=5, max_length=26)
     email: EmailStr
-    password: str = Field(min_length=6, max_length=10)
+    password: str = Field(min_length=6, max_length=20)
 
 
 class UserResponseSchema(BaseModel):
@@ -35,6 +35,8 @@ class ContactModel(BaseModel):
     birthday:date
     notes:str
 
+class RequestEmail(BaseModel):
+    email: EmailStr
 
 class ContactResponse(BaseModel):
     id: int = 1
