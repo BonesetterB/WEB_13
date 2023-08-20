@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends,  UploadFile, File
+from sqlalchemy.ext.asyncio import AsyncSession
 import cloudinary
 import cloudinary.uploader
 
@@ -12,6 +12,12 @@ from src.schemas import UserResponseSchema
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+cloudinary.config(
+        cloud_name=config.cloudinary_name,
+        api_key=config.cloudinary_api_key,
+        api_secret=config.cloudinary_api_secret,
+        secure=True
+    )
 
 @router.get("/me/", response_model=UserResponseSchema)
 async def read_users_me(current_user: User = Depends(auth_service.get_current_user)):
@@ -20,13 +26,8 @@ async def read_users_me(current_user: User = Depends(auth_service.get_current_us
 
 @router.patch('/avatar', response_model=UserResponseSchema)
 async def update_avatar_user(file: UploadFile = File(), current_user: User = Depends(auth_service.get_current_user),
-                             db: Session = Depends(get_db)):
-    cloudinary.config(
-        cloud_name=config.cloudinary_name,
-        api_key=config.cloudinary_api_key,
-        api_secret=config.cloudinary_api_secret,
-        secure=True
-    )
+                             db: AsyncSession = Depends(get_db)):
+
 
     r = cloudinary.uploader.upload(file.file, public_id=f'NotesApp/{current_user.username}', overwrite=True)
     src_url = cloudinary.CloudinaryImage(f'NotesApp/{current_user.username}')\

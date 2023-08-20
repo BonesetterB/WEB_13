@@ -1,14 +1,25 @@
 from fastapi import FastAPI,Request,status
 from ipaddress import ip_address
 from fastapi.staticfiles import StaticFiles
-from src.routes import contacts,auth
+from src.routes import contacts,auth,users
 import uvicorn
 from fastapi.responses import JSONResponse
 from typing import Callable
 import re
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_limiter import FastAPILimiter
+from src.conf.config import config
+import redis.asyncio as redis
 
 app= FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 ALLOWED_IPS = [ip_address('192.168.1.0'), ip_address('172.16.0.0'), ip_address("127.0.0.1")]
 
@@ -38,6 +49,13 @@ app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
 app.include_router(contacts.router)
 app.include_router(auth.router)
+app.include_router(users.router)
+
+@app.on_event("startup")
+async def startup():
+    r = await redis.Redis(host=config.redis_host, port=config.redis_port, db=0, encoding="utf-8",
+                          decode_responses=True)
+    await FastAPILimiter.init(r)
 
 if __name__ == '__main__':
     uvicorn.run("main:app", host="127.0.0.1", reload=True, log_level="info")

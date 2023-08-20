@@ -8,9 +8,23 @@ from typing import List
 from datetime import datetime, timedelta
 from src.services.auth import auth_service
 from sqlalchemy.future import select
-
+from fastapi_limiter.depends import RateLimiter
 
 router = APIRouter(prefix='/main', tags=["contacts"])
+
+async def get_contacts(skip: int, limit: int, user_id: int, db: AsyncSession):
+    result = await db.execute(
+        select(Contact).filter(Contact.user_id == user_id).offset(skip).limit(limit)
+    )
+    contacts = result.scalars().all()
+    return contacts
+
+@router.get("/", response_model=List[ContactResponse], description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))])
+async def read_notes(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db),
+                     current_user: User = Depends(auth_service.get_current_user)):
+    contacts = await get_contacts(skip, limit, current_user, db)
+    return contacts
 
 @router.get("/api/healthchecker")
 async def healthchecker(db: AsyncSession = Depends(get_db)):
