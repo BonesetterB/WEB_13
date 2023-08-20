@@ -7,7 +7,7 @@ from src.schemas import UserSchema, UserResponseSchema, TokenModel, RequestEmail
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 from src.services.email import send_email
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix='/auth', tags=["auth"])
 security = HTTPBearer()
@@ -62,12 +62,7 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/{username}')
-async def refresh_token(username:str, db: AsyncSession = Depends(get_db)):
-    print('-------------------------------------------------------------------------------------------')
-    print(f"{username} відкрив наше повідомлення")
-    print('--------------------------------------------------------------------------------------------')
-    return RedirectResponse("http://127.0.0.1:8000/static/pixel.png")
+
 
 @router.get('/confirmed_email/{token}')
 async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):

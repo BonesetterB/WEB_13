@@ -9,13 +9,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.repository import users as repository_users
+from src.conf.config import config
+import pickle
+import redis
 
+def hash_for_user(email:str):
+    return f"user:{email}"
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    SECRET_KEY = "7fdd20f489c56745948db9e90d91f9d6a23abb28c1e87cb705fdc8b1bf0f1a3c"
-    ALGORITHM = "HS256"
+    SECRET_KEY =config.secret_key
+    ALGORITHM = config.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+    cache = redis.Redis(host='localhost', port=6379, db=0)
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
@@ -88,9 +94,17 @@ class Auth:
         except JWTError as e:
             raise credentials_exception
 
-        user = await repository_users.get_user_by_email(email, db)
+        user_hash=hash_for_user(email)
+        user = self.cache.get(user_hash)
         if user is None:
-            raise credentials_exception
+            user = await repository_users.get_user_by_email(email, db)
+            if user is None:
+                raise credentials_exception
+            self.cache.set(user_hash, pickle.dumps(user))
+            self.cache.expire(user_hash, 900)
+        else:
+            user = pickle.loads(user)
+
         return user
 
 
