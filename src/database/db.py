@@ -13,7 +13,12 @@ class DatabaseSessionManager:
 
     async def session(self):
         async with self._session_maker() as session:
-            yield session
+            try:
+                yield session
+            except Exception as err:
+                await session.rollback()
+            finally:
+                await session.close()
 
 sessionmanager = DatabaseSessionManager(config.sqlalchemy_database_url)
 engine = create_async_engine(config.sqlalchemy_database_url)

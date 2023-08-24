@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
-from datetime  import date,datetime
+from pydantic import BaseModel, EmailStr, Field,ConfigDict
+from datetime  import date
 
 
 
@@ -15,8 +15,7 @@ class UserResponseSchema(BaseModel):
     email: EmailStr
     avatar: str
 
-    class Config:
-        from_attributes  = True
+    model_config = ConfigDict(from_attributes = True)
 
 
 
@@ -47,7 +46,6 @@ class ContactResponse(BaseModel):
     birthday:date
     notes:str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes = True)
 
 
